@@ -1,0 +1,306 @@
+{
+  "datasets": [
+    {
+      "name": "ds_kpi",
+      "displayName": "KPIs",
+      "queryLines": [
+        "SELECT COUNT(*) AS batteries, SUM(CASE WHEN is_pack THEN 1 ELSE 0 END) AS packs, (SELECT COUNT(*) FROM ups_batteries.gold.device_lookup) AS device_pairs, (SELECT COUNT(DISTINCT oem_code) FROM ups_batteries.gold.oem_lookup) AS oem_codes FROM ups_batteries.gold.battery_catalog"
+      ]
+    },
+    {
+      "name": "ds_voltage",
+      "displayName": "Batteries by voltage",
+      "queryLines": [
+        "SELECT CONCAT(voltage_v, ' V') AS voltage, COUNT(*) AS batteries FROM ups_batteries.gold.battery_catalog WHERE voltage_v IS NOT NULL GROUP BY voltage_v ORDER BY voltage_v"
+      ]
+    },
+    {
+      "name": "ds_price_capacity",
+      "displayName": "Price vs capacity",
+      "queryLines": [
+        "SELECT title, capacity_ah, price_eur, CONCAT(voltage_v, ' V') AS voltage FROM ups_batteries.gold.battery_catalog WHERE capacity_ah IS NOT NULL AND price_eur IS NOT NULL"
+      ]
+    },
+    {
+      "name": "ds_brand",
+      "displayName": "Brands",
+      "queryLines": [
+        "SELECT brand, COUNT(*) AS batteries, ROUND(AVG(price_eur), 2) AS avg_price_eur FROM ups_batteries.gold.battery_catalog WHERE brand IS NOT NULL GROUP BY brand ORDER BY batteries DESC"
+      ]
+    },
+    {
+      "name": "ds_devices",
+      "displayName": "Devices per brand",
+      "queryLines": [
+        "SELECT device_brand, COUNT(DISTINCT device_title) AS devices FROM ups_batteries.gold.device_lookup WHERE device_brand IS NOT NULL GROUP BY device_brand ORDER BY devices DESC LIMIT 15"
+      ]
+    },
+    {
+      "name": "ds_catalog",
+      "displayName": "Catalog",
+      "queryLines": [
+        "SELECT brand, model, voltage_v, capacity_ah, length_mm, width_mm, height_mm, terminal, chemistry, pack_units, price_eur, availability FROM ups_batteries.gold.battery_catalog ORDER BY voltage_v, capacity_ah"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "page_main",
+      "displayName": "UPS Battery Catalog",
+      "layout": [
+        {
+          "widget": {
+            "name": "k1",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_kpi",
+                  "fields": [{ "name": "batteries", "expression": "`batteries`" }],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "frame": { "showTitle": true, "title": "Batteries in catalog" },
+              "encodings": { "value": { "fieldName": "batteries", "displayName": "Batteries" } }
+            }
+          },
+          "position": { "x": 0, "y": 0, "width": 1, "height": 3 }
+        },
+        {
+          "widget": {
+            "name": "k2",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_kpi",
+                  "fields": [{ "name": "packs", "expression": "`packs`" }],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "frame": { "showTitle": true, "title": "Multi-battery packs" },
+              "encodings": { "value": { "fieldName": "packs", "displayName": "Packs" } }
+            }
+          },
+          "position": { "x": 1, "y": 0, "width": 1, "height": 3 }
+        },
+        {
+          "widget": {
+            "name": "k3",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_kpi",
+                  "fields": [{ "name": "device_pairs", "expression": "`device_pairs`" }],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "frame": { "showTitle": true, "title": "UPS-battery pairs" },
+              "encodings": { "value": { "fieldName": "device_pairs", "displayName": "Pairs" } }
+            }
+          },
+          "position": { "x": 2, "y": 0, "width": 2, "height": 3 }
+        },
+        {
+          "widget": {
+            "name": "k4",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_kpi",
+                  "fields": [{ "name": "oem_codes", "expression": "`oem_codes`" }],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "frame": { "showTitle": true, "title": "OEM codes cross-referenced" },
+              "encodings": { "value": { "fieldName": "oem_codes", "displayName": "OEM codes" } }
+            }
+          },
+          "position": { "x": 4, "y": 0, "width": 2, "height": 3 }
+        },
+        {
+          "widget": {
+            "name": "w_voltage",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_voltage",
+                  "fields": [
+                    { "name": "voltage", "expression": "`voltage`" },
+                    { "name": "batteries", "expression": "`batteries`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "frame": { "showTitle": true, "title": "Batteries by voltage" },
+              "encodings": {
+                "x": { "fieldName": "voltage", "scale": { "type": "categorical" }, "displayName": "Voltage" },
+                "y": { "fieldName": "batteries", "scale": { "type": "quantitative" }, "displayName": "Batteries" }
+              }
+            }
+          },
+          "position": { "x": 0, "y": 3, "width": 3, "height": 6 }
+        },
+        {
+          "widget": {
+            "name": "w_scatter",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_price_capacity",
+                  "fields": [
+                    { "name": "capacity_ah", "expression": "`capacity_ah`" },
+                    { "name": "price_eur", "expression": "`price_eur`" },
+                    { "name": "voltage", "expression": "`voltage`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "scatter",
+              "frame": { "showTitle": true, "title": "Price vs capacity (color = voltage)" },
+              "encodings": {
+                "x": { "fieldName": "capacity_ah", "scale": { "type": "quantitative" }, "displayName": "Capacity (Ah)" },
+                "y": { "fieldName": "price_eur", "scale": { "type": "quantitative" }, "displayName": "Price (EUR)" },
+                "color": { "fieldName": "voltage", "scale": { "type": "categorical" }, "displayName": "Voltage" }
+              }
+            }
+          },
+          "position": { "x": 3, "y": 3, "width": 3, "height": 6 }
+        },
+        {
+          "widget": {
+            "name": "w_brand",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_brand",
+                  "fields": [
+                    { "name": "brand", "expression": "`brand`" },
+                    { "name": "batteries", "expression": "`batteries`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "frame": { "showTitle": true, "title": "Batteries per brand" },
+              "encodings": {
+                "x": { "fieldName": "batteries", "scale": { "type": "quantitative" }, "displayName": "Batteries" },
+                "y": { "fieldName": "brand", "scale": { "type": "categorical" }, "displayName": "Brand" }
+              }
+            }
+          },
+          "position": { "x": 0, "y": 9, "width": 3, "height": 6 }
+        },
+        {
+          "widget": {
+            "name": "w_devices",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_devices",
+                  "fields": [
+                    { "name": "device_brand", "expression": "`device_brand`" },
+                    { "name": "devices", "expression": "`devices`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "frame": { "showTitle": true, "title": "UPS devices covered, per brand" },
+              "encodings": {
+                "x": { "fieldName": "devices", "scale": { "type": "quantitative" }, "displayName": "Devices" },
+                "y": { "fieldName": "device_brand", "scale": { "type": "categorical" }, "displayName": "UPS brand" }
+              }
+            }
+          },
+          "position": { "x": 3, "y": 9, "width": 3, "height": 6 }
+        },
+        {
+          "widget": {
+            "name": "w_catalog",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_catalog",
+                  "fields": [
+                    { "name": "brand", "expression": "`brand`" },
+                    { "name": "model", "expression": "`model`" },
+                    { "name": "voltage_v", "expression": "`voltage_v`" },
+                    { "name": "capacity_ah", "expression": "`capacity_ah`" },
+                    { "name": "length_mm", "expression": "`length_mm`" },
+                    { "name": "width_mm", "expression": "`width_mm`" },
+                    { "name": "height_mm", "expression": "`height_mm`" },
+                    { "name": "terminal", "expression": "`terminal`" },
+                    { "name": "chemistry", "expression": "`chemistry`" },
+                    { "name": "pack_units", "expression": "`pack_units`" },
+                    { "name": "price_eur", "expression": "`price_eur`" },
+                    { "name": "availability", "expression": "`availability`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "table",
+              "frame": { "showTitle": true, "title": "Battery catalog (searchable)" },
+              "encodings": {
+                "columns": [
+                  { "fieldName": "brand", "displayName": "Brand" },
+                  { "fieldName": "model", "displayName": "Model" },
+                  { "fieldName": "voltage_v", "displayName": "V" },
+                  { "fieldName": "capacity_ah", "displayName": "Ah" },
+                  { "fieldName": "length_mm", "displayName": "L (mm)" },
+                  { "fieldName": "width_mm", "displayName": "W (mm)" },
+                  { "fieldName": "height_mm", "displayName": "H (mm)" },
+                  { "fieldName": "terminal", "displayName": "Terminal" },
+                  { "fieldName": "chemistry", "displayName": "Chemistry" },
+                  { "fieldName": "pack_units", "displayName": "Pack units" },
+                  { "fieldName": "price_eur", "displayName": "Price (EUR)" },
+                  { "fieldName": "availability", "displayName": "Availability" }
+                ]
+              }
+            }
+          },
+          "position": { "x": 0, "y": 15, "width": 6, "height": 9 }
+        }
+      ]
+    }
+  ]
+}

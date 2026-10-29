@@ -1,0 +1,17 @@
+# Crawl output and downloaded documents — not committed (samples are)
+scraper/data/
+scraper/.scrapy/
+*.pdf
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+
+# IDE / OS
+.idea/
+.vscode/
+Thumbs.db
+.DS_Store
+main.py
